@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Entrequadros — tirinhas em lote</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="automation.js" defer></script>
+  <script src="balloon-cleaner.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header><a class="brand" href="./index.html">Kaline zé preguiça<span>✳</span></a><span class="local">● Local. Offline. Seu.</span></header>
+  <main>
+    <section class="intro"><p class="eyebrow">MENOS CLIQUES. MAIS HISTÓRIAS.</p><h1>Cortador de quadros<br><em>desgraçento</em></h1><p>Arraste suas tirinhas. Os cortes, os contornos e os espaços ficam por nossa conta.</p></section>
+    <div class="workspace">
+      <aside>
+        <section class="control-section"><div class="section-title"><span>01</span><h2>Imagens em lote</h2></div>
+          <button class="upload" id="openFiles">↥ <span>Escolher imagens</span><small>Uma ou várias · PNG, JPG ou WebP</small></button><input id="file" type="file" accept="image/png,image/jpeg,image/webp" multiple hidden>
+          <p id="fileInfo" class="muted">Ou arraste todos os arquivos para a área ao lado.</p>
+          <button id="demo" class="text-button">Experimentar com uma tirinha de exemplo ↗</button>
+        </section>
+        <section class="control-section"><div class="section-title"><span>02</span><h2>Padrão automático</h2></div>
+          <label class="field" for="count">Quadros por imagem <select id="count"><option value="0" selected>Automático</option><option value="2">2 quadros</option><option value="3">3 quadros</option><option value="4">4 quadros</option><option value="5">5 quadros</option><option value="6">6 quadros</option><option value="7">7 quadros</option><option value="8">8 quadros</option><option value="9">9 quadros</option><option value="10">10 quadros</option><option value="11">11 quadros</option><option value="12">12 quadros</option></select></label>
+          <label class="field" for="width">Largura de saída <span><input id="width" type="number" min="100" max="12000" value="608"> px</span></label>
+          <label class="check"><input id="fitHeight" type="checkbox" checked> Ajustar espaços para uma altura final</label>
+          <label class="field" for="height">Altura final <span><input id="height" type="number" min="200" max="32000" value="1600"> px</span></label>
+          <label class="field" for="gap">Espaço fixo entre quadros <span><input id="gap" type="number" min="0" max="4000" step="10" value="370" disabled> px</span></label>
+          <label class="check cleanup-option"><input id="emptyBalloons" type="checkbox" checked> Esvaziar balões automaticamente</label>
+          <p id="cleanupInfo" class="hint" role="status">Limpa falas completas em balões claros e identifica letras em fundos transparentes. Confira a prévia antes de baixar.</p>
+          <p class="hint">Reconhece quadros empilhados ou lado a lado. A saída segue a ordem de leitura, com quadros proporcionais e centralizados. As medidas podem ser ajustadas.</p>
+          <button id="processAll" class="tool" disabled>↻ Reprocessar lote</button>
+        </section>
+        <section class="control-section"><div class="section-title"><span>03</span><h2>Fila de imagens</h2></div><p id="batchInfo" class="hint" role="status">Nenhuma imagem carregada.</p><div id="queue" class="queue"></div><button id="downloadZip" class="primary zip" disabled>Baixar lote em ZIP ↓</button><button id="cancelBatch" class="text-button" hidden>Parar após esta imagem</button></section>
+        <details class="advanced"><summary>Ajustes manuais e limpeza dos balões</summary>
+        <fieldset id="editing" disabled>
+          <section class="control-section">
+            <button id="detect" class="tool">✳ Detectar divisões novamente</button>
+            <button class="tool active" data-tool="cut">✂ Ajustar divisões</button>
+            <p class="hint">Em faixas: clique para acrescentar, arraste para ajustar, Shift + clique cria pontos. Em layouts mistos: arraste a borda de cada quadro. Clique direito para remover.</p>
+            <button class="tool" data-tool="panel">▭ Selecionar quadro</button>
+            <button class="tool" data-tool="point">＋ Criar ou mover ponto</button>
+          </section>
+          <section class="control-section"><h2>Ajustar a limpeza</h2>
+            <p class="hint">O original continua com texto. Se algum balão não for identificado, escolha a ferramenta abaixo e clique no fundo dele, perto das letras.</p>
+            <button class="tool" data-tool="bubble">✳ Limpar um balão com um clique</button>
+            <p class="hint">Para retoques, use uma seleção ou o pincel.</p>
+            <div class="tool-grid"><button class="tool" data-tool="rectangle">▭ Retângulo</button><button class="tool" data-tool="ellipse">◯ Elipse</button><button class="tool" data-tool="brush">✎ Pincel</button><button class="tool" data-tool="picker">⌾ Conta-gotas</button></div>
+            <label class="field" for="color">Cor do preenchimento <input id="color" type="color" value="#ffffff"></label>
+            <label class="check"><input id="autoColor" type="checkbox" checked> Captar a cor ao redor da seleção</label>
+            <label class="field" for="size">Tamanho do pincel <span><input id="size" type="number" min="2" max="300" value="24"> px</span></label>
+            <p class="hint">O preenchimento é de cor lisa. Degradês podem precisar de retoques.</p>
+          </section>
+          <section class="control-section actions"><button id="undo" class="secondary" disabled>↶ Desfazer</button><button id="reset" class="text-button">Restaurar original</button></section>
+        </fieldset></details>
+      </aside>
+      <section class="editor-area">
+        <div class="editor-top"><div class="tabs" role="group" aria-label="Visualização"><button id="editTab" aria-pressed="false">Conferir cortes</button><button id="previewTab" class="selected" aria-pressed="true">Resultado automático</button></div><span id="panelCount">Nenhuma imagem</span></div>
+        <div id="stage" class="stage">
+          <div id="empty"><div class="paper-stack"><span>✳</span></div><h2>Selecione. Confira. Baixe.</h2><p>Uma imagem ou o trabalho do dia inteiro.<br>Quadros em faixas ou lado a lado, na ordem de leitura.</p><span class="privacy">Nenhuma imagem sai do seu computador.</span></div>
+          <canvas id="canvas" hidden aria-label="Prévia da tirinha. Use Conferir cortes para ajustar as divisões."></canvas>
+        </div>
+        <div class="editor-bottom"><p id="status" role="status" aria-live="polite">Escolha as imagens para processar automaticamente.</p><button id="export" class="primary" disabled>Baixar este PNG <span>↓</span></button></div>
+      </section>
+    </div>
+    <footer>FEITO PARA O INTERVALO ENTRE UM QUADRO E OUTRO.<span>Sem cadastro · Sem instalação · Sem tradução</span></footer>
+  </main>
+</body>
+</html>

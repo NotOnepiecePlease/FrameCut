@@ -1,0 +1,8 @@
+/Entrequadros.html
+/release/
+/exemplo-*.png
+/.tools/
+__pycache__/
+*.tmp
+.DS_Store
+Thumbs.db

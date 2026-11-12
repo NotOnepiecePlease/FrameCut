@@ -1,0 +1,49 @@
+FRAMECUT — GUIA RÁPIDO
+
+DOWNLOAD E ABERTURA
+1. Abra https://github.com/NotOnepiecePlease/FrameCut/releases/latest
+2. Na seção Assets, baixe FrameCut-portatil.zip.
+3. No Windows, clique com o botão direito no ZIP > Extrair tudo.
+4. Abra a pasta extraída e dê dois cliques em FrameCut.html.
+5. Se necessário, use Abrir com > Google Chrome ou Microsoft Edge.
+
+Você não precisa instalar nada. Depois do download, funciona offline.
+
+PRIMEIRO USO
+1. Deixe Quadros por imagem em Automático.
+2. O tamanho padrão é 608 x 1600 pixels; ajuste se precisar.
+3. Para manter os textos, desmarque Esvaziar balões automaticamente.
+4. Clique em Escolher imagens e selecione uma ou várias (Ctrl + clique).
+5. Aguarde o processamento e confira cada imagem na fila.
+6. Clique em Baixar este PNG ou Baixar lote em ZIP.
+7. Extraia o ZIP de resultados para acessar as imagens.
+
+CORRIGIR UM RECORTE
+Selecione a imagem > Conferir cortes > Ajustes manuais e limpeza dos balões.
+Em Ajustar divisões, arraste uma bolinha verde existente para movê-la.
+Shift + clique em um trecho livre da linha cria um ponto novo.
+Criar ou mover ponto também permite trabalhar sem Shift.
+Nos quadros retangulares, arraste uma borda; Selecionar quadro cria um recorte.
+Clique direito remove a linha ou o quadro. Desfazer ou Ctrl + Z volta uma etapa.
+Confira a prévia e use Reprocessar lote antes de baixar.
+
+CORRIGIR UM BALÃO
+Nos ajustes manuais, use Limpar um balão com um clique no fundo claro,
+perto das letras. Para retoques, use Retângulo, Elipse ou Pincel e copie a
+cor do fundo com o Conta-gotas. O preenchimento manual usa cor lisa.
+
+AVISOS
+Revisar: confira os recortes; a imagem fica de fora do ZIP até ser corrigida.
+Revisar texto: uma fala foi preservada; confira e retoque a limpeza.
+0 balões: confira se ainda existe texto que não foi identificado.
+Altura pequena: aumente a altura ou diminua a largura.
+Se mudar as medidas, use Reprocessar lote para aplicar a todas as imagens.
+
+IMPORTANTE
+A limpeza automática é aproximada; confira as imagens antes de publicar.
+Texturas sob letras transparentes podem ficar suavizadas.
+Baixe os resultados antes de fechar a aba ou substituir o lote.
+As imagens são processadas no computador e não são enviadas a um servidor.
+
+O guia detalhado está em COMO-USAR.html, nesta pasta.
+Novas versões: https://github.com/NotOnepiecePlease/FrameCut/releases/latest
