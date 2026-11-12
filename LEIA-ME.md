@@ -16,7 +16,7 @@ Quadros lado a lado são extraídos individualmente e empilhados na ordem de lei
 
 Os exemplos fornecidos têm larguras finais diferentes. Para reproduzir essas dimensões, use **426 × 1600** no exemplo com dois quadros superiores lado a lado, ou **378 × 1600** no exemplo com quatro quadros e margens brancas. A detecção e a ordem de leitura são automáticas; a largura e a altura são o padrão de saída escolhido para o lote.
 
-Se mudar o padrão, use **Reprocessar lote**. Baixar o ZIP também aplica automaticamente o padrão alterado antes de gerar o arquivo.
+Se mudar o padrão ou ajustar as bolinhas de corte, use **Reprocessar lote**. Ele gera os arquivos com os cortes e medidas atuais, preserva as correções manuais e abre **Resultado automático** ao terminar. Baixar o ZIP também aplica automaticamente o padrão alterado antes de gerar o arquivo. Para procurar cortes do zero na imagem selecionada, use **Detectar divisões novamente** nos ajustes manuais; essa ação substitui os cortes ajustados.
 
 ## Imagens para revisar
 

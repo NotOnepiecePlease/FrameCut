@@ -93,6 +93,24 @@ for(const [mode,shift] of [['point',false],['point',true],['cut',false]]){
  check('Internal handle can move horizontally: '+mode+(shift?' + Shift':''),after[handleIndex].x>chosen.x);
  click('#undo');check('Undo restores handle geometry: '+mode+(shift?' + Shift':''),JSON.stringify(handles())===JSON.stringify(before));
 }
+// Reproduce the reported flow: edit a handle, then reprocess without
+// manually switching tabs. Both downloads must use the edited geometry.
+click('[data-tool="point"]');const beforeReprocess=handles(),reprocessHandle=beforeReprocess[handleIndex];
+pointer('pointerdown',reprocessHandle.x,reprocessHandle.y);pointer('pointermove',reprocessHandle.x+2,reprocessHandle.y-15);pointer('pointerup',reprocessHandle.x+2,reprocessHandle.y-15);
+const editedHandles=handles();click('#previewTab');const expectedEditedPreview=canvas.toDataURL();click('#editTab');
+click('#processAll');await until(()=>!$('processAll').disabled);
+check('Reprocessing opens the updated result automatically',$('previewTab').getAttribute('aria-pressed')==='true');
+check('Reprocessed preview uses the moved cut',canvas.toDataURL()===expectedEditedPreview);
+check('Reprocessing preserves manual handle positions',JSON.stringify(handles())===JSON.stringify(editedHandles));click('#previewTab');
+const downloadStart=downloads.length;click('#export');await until(()=>downloads.length>downloadStart);
+async function pngPixels(blob){const image=await createImageBitmap(blob),out=document.createElement('canvas');out.width=image.width;out.height=image.height;out.getContext('2d').drawImage(image,0,0);return out.toDataURL();}
+check('Single PNG after reprocessing matches edited preview',await pngPixels(downloads.at(-1).blob)===expectedEditedPreview);
+click('#downloadZip');await until(()=>downloads.length>downloadStart+1);
+const zipBytes=await downloads.at(-1).blob.arrayBuffer(),zipView=new DataView(zipBytes),zipNameSize=zipView.getUint16(26,true),zipExtraSize=zipView.getUint16(28,true),pngOffset=30+zipNameSize+zipExtraSize;
+const zippedPng=new Blob([zipBytes.slice(pngOffset,pngOffset+zipView.getUint32(18,true))],{type:'image/png'});
+check('ZIP after reprocessing matches edited preview',await pngPixels(zippedPng)===expectedEditedPreview);
+downloads.splice(downloadStart);click('#undo');check('Reprocessing preserves undo history',JSON.stringify(handles())===JSON.stringify(beforeReprocess));
+click('#processAll');await until(()=>!$('processAll').disabled);
 click('#previewTab');
 check('ZIP enabled after batch',!$('downloadZip').disabled);
 click('#downloadZip');await until(()=>downloads.some(d=>d.name.endsWith('.zip')));

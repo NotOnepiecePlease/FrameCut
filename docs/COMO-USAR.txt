@@ -38,6 +38,10 @@ Revisar texto: uma fala foi preservada; confira e retoque a limpeza.
 0 balões: confira se ainda existe texto que não foi identificado.
 Altura pequena: aumente a altura ou diminua a largura.
 Se mudar as medidas, use Reprocessar lote para aplicar a todas as imagens.
+Reprocessar lote também aplica as bolinhas ajustadas, preservando suas
+correções, e abre o resultado atualizado ao terminar. Não refaz a detecção.
+Para procurar cortes do zero na imagem selecionada, use Ajustes manuais e
+limpeza dos balões > Detectar divisões novamente.
 
 IMPORTANTE
 A limpeza automática é aproximada; confira as imagens antes de publicar.

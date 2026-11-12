@@ -59,7 +59,9 @@ O navegador salva os arquivos na pasta de downloads configurada. Extraia o ZIP d
 | Ajustar espaços para uma altura final | Calcula os intervalos brancos para chegar à altura escolhida. |
 | Espaço fixo entre quadros | Fica disponível ao desmarcar o ajuste por altura; usa o intervalo informado em pixels. |
 
-Se mudar as medidas depois de importar, clique em **Reprocessar lote**. Baixar o ZIP também aplica o padrão alterado.
+Se mudar as medidas ou mover os pontos dos cortes depois de importar, clique em **Reprocessar lote**. O botão gera os arquivos novamente com os ajustes atuais, **mantém suas correções manuais** e abre **Resultado automático** ao terminar. Baixar o ZIP também aplica o padrão alterado.
+
+Para descartar os cortes ajustados e procurar novas divisões do zero na imagem selecionada, use **Ajustes manuais e limpeza dos balões → Detectar divisões novamente**. São ações diferentes: reprocessar aplica os ajustes; detectar novamente substitui os cortes.
 
 Os quadros mantêm suas proporções em relação à página. Quadros estreitos ficam centralizados; eles não são esticados até a largura de um quadro maior. A leitura segue **de cima para baixo, da esquerda para a direita**.
 
@@ -173,9 +175,10 @@ Para publicar depois de autenticar o GitHub CLI:
 
 ```powershell
 git push origin main
-git tag v1.0.0
-git push origin v1.0.0
-gh release create v1.0.0 release/FrameCut.html release/FrameCut-portatil.zip release/COMO-USAR.html release/SHA256SUMS.txt --repo NotOnepiecePlease/FrameCut --title "FrameCut v1.0.0" --notes-file RELEASE_NOTES.md --verify-tag
+$frameCutVersion = (Get-Content VERSION).Trim()
+git tag "v$frameCutVersion"
+git push origin "v$frameCutVersion"
+gh release create "v$frameCutVersion" release/FrameCut.html release/FrameCut-portatil.zip release/COMO-USAR.html release/SHA256SUMS.txt --repo NotOnepiecePlease/FrameCut --title "FrameCut v$frameCutVersion" --notes-file RELEASE_NOTES.md --verify-tag
 ```
 
 Na próxima versão, atualize `VERSION`, as notas e o nome da tag. Detalhes adicionais da implementação e dos testes estão em [LEIA-ME.md](LEIA-ME.md).

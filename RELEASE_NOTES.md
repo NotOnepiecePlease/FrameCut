@@ -1,6 +1,12 @@
-# FrameCut v1.0.0
+# FrameCut v1.0.1
 
-Primeira versão portátil do cortador de quadros, com processamento local e em lote.
+Corrige a atualização da prévia depois de reprocessar o lote.
+
+## Correção desta versão
+
+Ao mover as bolinhas de corte e clicar em **Reprocessar lote**, o aplicativo gerava os arquivos, mas permanecia no editor do original. Agora abre **Resultado automático** com a imagem atualizada ao terminar.
+
+Reprocessar preserva os ajustes manuais e o histórico de desfazer. Os testes verificam que a prévia, o PNG individual e o PNG dentro do ZIP usam as mesmas posições ajustadas. Para procurar novos cortes do zero na imagem selecionada, use **Detectar divisões novamente**, nos ajustes manuais.
 
 ## Qual arquivo baixar?
 

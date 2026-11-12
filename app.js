@@ -368,6 +368,9 @@
         updateQueue();
       }
       batchStamp = stamp();
+      // Show the newly generated result after processing, including when the
+      // user launched it directly from the original/cut editor.
+      if (queue[activeIndex]?.blob) setPreview(true);
       const done = queue.filter(e => e.blob).length;
       const cleaned = queue.reduce((n, e) => n + (e.cleaning?.balloons || 0), 0), unmatched = queue.filter(e => e.blob && e.cleaning?.balloons === 0).length;
       const preserved = queue.reduce((n, e) => n + (e.cleaning?.reviewCount || 0), 0);
