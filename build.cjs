@@ -7,7 +7,8 @@ const html = read('index.html')
   .replace('<script src="app.js" defer></script>', '')
   .replace('<script src="automation.js" defer></script>', '')
   .replace('<script src="balloon-cleaner.js" defer></script>', '')
-  .replace('</body>', () => '<script>' + read('automation.js') + '\n' + read('balloon-cleaner.js') + '\n' + read('app.js') + '</script>\n</body>')
+  .replace('<script src="story.js" defer></script>', '')
+  .replace('</body>', () => '<script>' + read('automation.js') + '\n' + read('balloon-cleaner.js') + '\n' + read('story.js') + '\n' + read('app.js') + '</script>\n</body>')
   .replace('href="./index.html"', 'href="#"');
 fs.writeFileSync(path.join(__dirname, 'Entrequadros.html'), html);
 console.log('Entrequadros.html pronto para abrir ou compartilhar.');

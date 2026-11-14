@@ -2,7 +2,7 @@
 // Local detection of complete utterances in opaque and translucent balloons.
 // No OCR, downloads, or remote processing. Original artwork is never overwritten.
 window.BalloonCleaner = (() => {
-  function analyze(image) {
+  function analyze(image, options = {}) {
     const ratio = Math.min(1, 1400 / image.width, 2200 / image.height);
     const sample = document.createElement('canvas'); sample.width = Math.max(1, Math.round(image.width * ratio)); sample.height = Math.max(1, Math.round(image.height * ratio));
     const context = sample.getContext('2d', { willReadFrequently: true }); context.drawImage(image, 0, 0, sample.width, sample.height);
@@ -10,7 +10,10 @@ window.BalloonCleaner = (() => {
     const w = sample.width, h = sample.height, length = w * h;
     const labels = new Int32Array(length), visited = new Uint8Array(length), queue = new Int32Array(length), light = new Uint8Array(length);
     const regions = [null], glyphs = [];
-    for (let p = 0; p < length; p++) { const i = p * 4; light[p] = data[i + 3] > 220 && Math.min(data[i], data[i + 1], data[i + 2]) > 140 && Math.max(data[i], data[i + 1], data[i + 2]) > 185 ? 1 : 0; }
+    for (let p = 0; p < length; p++) {
+      const i = p * 4, low = Math.min(data[i], data[i + 1], data[i + 2]), high = Math.max(data[i], data[i + 1], data[i + 2]);
+      light[p] = data[i + 3] > 220 && (options.closedBalloonsOnly ? low > 235 && high > 245 : low > 140 && high > 185) ? 1 : 0;
+    }
     function flood(seed, test, mark, visit) {
       let head = 0, tail = 1; queue[0] = seed; mark(seed);
       while (head < tail) {
@@ -30,7 +33,46 @@ window.BalloonCleaner = (() => {
       });
       region.width = region.x2 - region.x1 + 1; region.height = region.y2 - region.y1 + 1;
       region.eligible = region.area >= Math.max(250, 800 * ratio * ratio) && region.area < length * 0.28 && region.x1 > 0 && region.y1 > 0 && region.x2 < w - 1 && region.y2 < h - 1 && region.width > 35 * ratio && region.width / region.height > 0.25;
+      if (options.closedBalloonsOnly) region.eligible = region.area >= length * 0.012 && region.area < length * 0.6 && region.width >= w * 0.12 && region.height >= h * 0.055 && region.x1 > 0 && region.y1 > 0 && region.x2 < w - 1 && region.y2 < h - 1;
       regions.push(region);
+    }
+    if (options.closedBalloonsOnly) {
+      // Flood the complement as well: detached text is surrounded by one
+      // balloon interior. Artwork connected to the outside cannot qualify.
+      for (let seed = 0; seed < length; seed++) {
+        if (light[seed] || visited[seed]) continue;
+        let x1 = w, y1 = h, x2 = 0, y2 = 0;
+        const neighbors = new Set();
+        const size = flood(seed, p => !light[p] && !visited[p], p => { visited[p] = 1; }, (x, y) => {
+          x1 = Math.min(x1, x); y1 = Math.min(y1, y); x2 = Math.max(x2, x); y2 = Math.max(y2, y);
+          for (const p of [x ? y * w + x - 1 : -1, x < w - 1 ? y * w + x + 1 : -1, y ? (y - 1) * w + x : -1, y < h - 1 ? (y + 1) * w + x : -1]) {
+            if (p >= 0 && regions[labels[p]]?.eligible) neighbors.add(labels[p]);
+          }
+        });
+        if (neighbors.size !== 1) continue;
+        const region = regions[[...neighbors][0]];
+        if (x1 <= region.x1 || y1 <= region.y1 || x2 >= region.x2 || y2 >= region.y2) continue;
+        // An enclosed white shape can also be a face, mask or decorated object.
+        // Colored marks inside it are evidence of artwork, even if other marks
+        // look like black letters. Preserve the whole region in that case.
+        let colored = 0;
+        for (let index = 0; index < size; index++) {
+          const i = queue[index] * 4, high = Math.max(data[i], data[i + 1], data[i + 2]), low = Math.min(data[i], data[i + 1], data[i + 2]);
+          if (high > 90 && high - low > 65) colored++;
+        }
+        if (colored >= 4 && colored / size > 0.08) region.coloredArtwork = true;
+        const points = queue.slice(0, size).filter(p => Math.max(data[p * 4], data[p * 4 + 1], data[p * 4 + 2]) < 160);
+        if (!points.length) continue;
+        region.glyphs.push({ x1, y1, x2, y2, width: x2 - x1 + 1, height: y2 - y1 + 1, area: points.length, points });
+      }
+      for (const region of regions.slice(1)) {
+        const letters = region.glyphs.filter(g => g.height >= 4 && g.area >= 4);
+        if (!region.eligible || region.coloredArtwork || letters.length < 2) continue;
+        const heights = letters.map(g => g.height).sort((a, b) => a - b);
+        region.letters = letters; region.median = heights[(heights.length / 2) | 0]; region.rows = [];
+        region.automatic = true; region.closedOnly = true;
+      }
+      return { sample, pixels, labels, regions, glyphs: [], blocks: [], ratio, w, h };
     }
     const strictGlyphs = [];
     for (const threshold of [135, 85]) {
@@ -121,7 +163,7 @@ window.BalloonCleaner = (() => {
     // Include punctuation and small disconnected parts once a textual group is found.
     // Opaque balloons are processed as a whole, including every caption and
     // punctuation mark; a smaller font in a joined lobe must not be left behind.
-    const glyphs = region.transparent ? region.glyphs : region.glyphs.filter(g => g.height <= Math.max(median * 2.3, ...letters.map(g => g.height)) && g.width <= median * 4 && region.rows.some(r => Math.abs((g.y1 + g.y2) / 2 - r.y) < Math.max(median * 0.80, g.height * 0.60)));
+    const glyphs = region.transparent || region.closedOnly ? region.glyphs : region.glyphs.filter(g => g.height <= Math.max(median * 2.3, ...letters.map(g => g.height)) && g.width <= median * 4 && region.rows.some(r => Math.abs((g.y1 + g.y2) / 2 - r.y) < Math.max(median * 0.80, g.height * 0.60)));
     if (!glyphs.length) return 0;
     const padding = Math.max(3, Math.ceil(median * 0.36));
     const x1 = Math.max(0, Math.min(...glyphs.map(g => g.x1)) - padding - 2), x2 = Math.min(w - 1, Math.max(...glyphs.map(g => g.x2)) + padding + 2);
@@ -167,6 +209,20 @@ window.BalloonCleaner = (() => {
       for (let k = 0; k < 3; k++) values[p * 3 + k] = data[src + k];
       if (mask[p]) targets.push(p);
     }
+    if (region.closedOnly) {
+      // A closed white balloon has a solid background. Use its median color
+      // rather than interpolating large letters into visible grey smudges.
+      const hist = [new Uint32Array(256), new Uint32Array(256), new Uint32Array(256)]; let count = 0;
+      for (let y = region.y1; y <= region.y2; y += 2) for (let x = region.x1; x <= region.x2; x += 2) if (labels[y * w + x] === region.id) {
+        count++; for (let k = 0; k < 3; k++) hist[k][data[(y * w + x) * 4 + k]]++;
+      }
+      const color = hist.map(channel => { let sum = 0; for (let v = 0; v < 256; v++) { sum += channel[v]; if (sum >= count / 2) return v; } return 255; });
+      for (const p of targets) {
+        const x = p % pw + x1, y = ((p / pw) | 0) + y1, i = (y * w + x) * 4;
+        for (let k = 0; k < 3; k++) overlay.data[i + k] = color[k]; overlay.data[i + 3] = 255;
+      }
+      return targets.length;
+    }
     // Initialize from the nearest clean boundary, then solve a local harmonic
     // interpolation to continue gentle color changes through the erased glyphs.
     const filled = new Uint8Array(size), bfs = new Int32Array(size); let head = 0, tail = 0;
@@ -202,7 +258,7 @@ window.BalloonCleaner = (() => {
     return targets.length;
   }
   function clean(image, options = {}) {
-    const model = analyze(image);
+    const model = analyze(image, options);
     let regions = model.regions.filter(r => r?.automatic);
     if (options.point) {
       const x = Math.max(0, Math.min(model.w - 1, Math.round(options.point.x * model.w / image.width))), y = Math.max(0, Math.min(model.h - 1, Math.round(options.point.y * model.h / image.height)));

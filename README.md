@@ -35,6 +35,24 @@ Pronto: não precisa instalar Python, Node.js, Photoshop ou iniciar localhost. O
 
 ## Usar no dia a dia
 
+### Escolher como importar
+
+- **Recortar páginas**: cada arquivo contém uma página com vários quadros. O aplicativo detecta os cortes e gera um PNG por página, com opção de ZIP para o lote.
+- **Montar uma história**: cada arquivo já é um quadro. O aplicativo preserva as imagens inteiras e monta um único PNG vertical na ordem da lista.
+
+**Ctrl + V funciona nos dois modos.** Na origem, escolha **Copiar imagem**, volte ao aplicativo e cole. Copiar apenas o endereço da imagem não importa o arquivo. Cada nova colagem acrescenta imagens à fila, sem substituir as anteriores; colagens seguidas aguardam o processamento.
+
+### Montar uma história
+
+1. Escolha **Montar uma história**.
+2. Cole os quadros com **Ctrl + V**, arraste arquivos para a prévia ou use **Escolher imagens**. Novas importações acrescentam quadros à história atual.
+3. Organize as miniaturas numeradas arrastando ou usando **↑ / ↓**. Remova um quadro com **×**.
+4. Ajuste largura e espaço; o padrão é **608 px de largura e 100 px de intervalo**, com altura automática. Cada quadro mantém sua proporção.
+5. A opção **Esvaziar balões automaticamente** vem ligada. No modo história, limpa balões brancos fechados; textos em fundos transparentes ou coloridos são preservados. Confira o resultado e os avisos de texto.
+6. Depois de alterar os ajustes, use **Montar história**. Clique em **Baixar história em PNG** para salvar tudo em uma imagem.
+
+Também pode ajustar os espaços para uma altura final, desde que ela comporte todos os quadros. **Começar outra história** limpa a lista. Alternar os modos mantém as imagens e os ajustes de cada um durante a sessão; fechar a aba descarta o trabalho.
+
 ### Preparar uma imagem ou várias de uma vez
 
 1. Deixe **Quadros por imagem** em **Automático**.

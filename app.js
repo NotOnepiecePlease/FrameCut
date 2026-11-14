@@ -16,6 +16,18 @@
   const clonePanels = () => panels ? panels.map(p => ({ ...p })) : null;
   const geometry = () => panels ? { panels } : cuts;
   const panelCount = () => panels ? panels.length : cuts.length + 1;
+  let importChain = Promise.resolve(), pendingImports = 0, clipboardSequence = 0;
+  const story = window.createFrameCutStory({
+    options, status, decode, toBlob: value => toBlob(value), download,
+    pagesBusy: () => busy || batchBusy || pendingImports > 0,
+    restorePages: () => {
+      updateQueue();
+      $('undo').disabled = !history.length;
+      $('empty').hidden = loaded; canvas.hidden = !loaded;
+      if (loaded) setPreview(true);
+      else { $('panelCount').textContent = 'Nenhuma imagem'; status('Escolha páginas ou cole imagens com Ctrl + V.'); }
+    }
+  });
   function remember(pixels = false) {
     activeCleanup = null;
     revision++; if (pixels) paintDirty = true;
@@ -61,6 +73,7 @@
     return engine.compose(cleanup?.canvas || work, geometry(), options(), target, maxWidth);
   }
   function render() {
+    if (story.active) { story.show(); return; }
     if (!loaded) return;
     if (queue[activeIndex]) { queue[activeIndex].lines = cloneCuts(); queue[activeIndex].panels = clonePanels(); }
     $('panelCount').textContent = `${panelCount()} quadro${panelCount() === 1 ? '' : 's'}${panels ? ' · recortes detectados' : ''}`;
@@ -153,7 +166,7 @@
     return group ? '#' + group.rgb.map(v => Math.round(v / group.count).toString(16).padStart(2, '0')).join('') : $('color').value;
   }
   canvas.addEventListener('pointerdown', event => {
-    if (!loaded || preview || batchBusy || event.button !== 0) return;
+    if (story.active || !loaded || preview || batchBusy || event.button !== 0) return;
     event.preventDefault(); const p = position(event); canvas.setPointerCapture(event.pointerId);
     if (tool === 'panel') { gesture = { kind: 'panelshape', start: p, end: p }; render(); return; }
     if (panels && ['cut', 'point'].includes(tool)) {
@@ -268,7 +281,7 @@
   }
   canvas.addEventListener('pointerup', finishGesture); canvas.addEventListener('pointercancel', finishGesture);
   canvas.addEventListener('contextmenu', event => {
-    event.preventDefault(); if (!loaded || preview || batchBusy || !['cut', 'point', 'panel'].includes(tool)) return;
+    event.preventDefault(); if (story.active || !loaded || preview || batchBusy || !['cut', 'point', 'panel'].includes(tool)) return;
     if (panels) {
       const p = position(event), index = panels.findIndex(r => p.x >= r.x && p.x <= r.x + r.width && p.y >= r.y && p.y <= r.y + r.height);
       if (index >= 0) { remember(); panels.splice(index, 1); render(); status('Quadro removido.'); } return;
@@ -286,6 +299,7 @@
     remember(true); cuts = []; panels = null; wctx.clearRect(0, 0, work.width, work.height); wctx.drawImage(source, 0, 0); render(); status('Imagem original restaurada. Você pode desfazer esta ação.');
   });
   $('export').addEventListener('click', async () => {
+    if (story.active) { await story.export(); return; }
     if (!loaded || busy || batchBusy) return;
     if (queue[activeIndex]?.report && ((!queue[activeIndex].report.confident && !queue[activeIndex].approved) || (number('count', 0, 12) && panelCount() !== number('count', 0, 12)))) { setPreview(false); status('Confira e ajuste os cortes em Ajustes manuais antes de baixar esta imagem.'); document.querySelector('.advanced').open = true; return; }
     busy = true; $('export').disabled = true;
@@ -299,6 +313,7 @@
     finally { busy = false; $('export').disabled = false; }
   });
   function updateQueue() {
+    if (story.active) { story.update(); return; }
     $('queue').replaceChildren();
     queue.forEach((entry, index) => {
       const button = document.createElement('button'); button.className = 'queue-item' + (index === activeIndex ? ' current' : '');
@@ -310,6 +325,7 @@
     $('processAll').disabled = batchBusy || !queue.length;
     $('openFiles').disabled = batchBusy; $('demo').disabled = batchBusy; $('editing').disabled = !loaded || batchBusy;
     $('export').disabled = !loaded || batchBusy;
+    $('pagesMode').disabled = busy || batchBusy; $('storyMode').disabled = busy || batchBusy;
     for (const id of ['width', 'count', 'fitHeight', 'height', 'gap', 'emptyBalloons']) $(id).disabled = batchBusy || (id === 'height' && !$('fitHeight').checked) || (id === 'gap' && $('fitHeight').checked);
     $('cancelBatch').hidden = !batchBusy;
     const done = queue.filter(e => e.blob).length, review = queue.filter(e => e.state === 'Revisar' || e.state === 'Erro').length;
@@ -335,6 +351,7 @@
   }
   function stamp() { return JSON.stringify([options(), number('count', 0, 12), $('emptyBalloons').checked, revision]); }
   async function processAll() {
+    if (story.active) return story.build();
     if (batchBusy || !queue.length) return;
     batchBusy = true; stopBatch = false; updateQueue();
     const settings = options(), started = performance.now(); let bytes = 0;
@@ -377,12 +394,23 @@
       status(`${done}/${queue.length} imagens prontas em ${((performance.now() - started) / 1000).toFixed(1)} s.${$('emptyBalloons').checked ? ` ${cleaned} balões esvaziados.${preserved ? ` ${preserved} falas preservadas para revisão.` : ''}${unmatched ? ` ${unmatched} imagens sem balões identificados: confira os textos.` : ''}` : ''}${done < queue.length ? ' Abra os itens sinalizados para conferir os cortes ou o erro.' : ' Confira os resultados e baixe o ZIP.'}`);
     } finally { batchBusy = false; updateQueue(); }
   }
-  async function enqueueFiles(files) {
-    if (batchBusy || busy) return;
+  function enqueueFiles(files, append = false) {
+    const snapshot = [...files], mode = story.active;
+    pendingImports++;
+    importChain = importChain.then(async () => {
+      // Pasting during a manual rebuild or download must wait, never drop frames.
+      while (busy || batchBusy || story.busy) await new Promise(resolve => setTimeout(resolve, 20));
+      if (mode) await story.add(snapshot);
+      else await importPages(snapshot, append);
+    }).catch(error => status(error.message)).finally(() => { pendingImports--; $('file').value = ''; });
+    return importChain;
+  }
+  async function importPages(files, append = false) {
     const valid = [...files].filter(file => /^image\/(png|jpeg|webp)$/.test(file.type));
     if (!valid.length) { status('Escolha imagens PNG, JPG ou WebP.'); return; }
-    if (valid.length > 250) { status('Selecione até 250 imagens por lote.'); return; }
-    queue = valid.map(file => ({ file, state: 'Na fila' })); activeIndex = -1; revision = 0; batchStamp = ''; paintDirty = false;
+    if (valid.length + (append ? queue.length : 0) > 250) { status('Selecione até 250 imagens por lote.'); return; }
+    if (append && paintDirty && queue[activeIndex]) queue[activeIndex].editBlob = await toBlob(work);
+    queue = [...(append ? queue : []), ...valid.map(file => ({ file, state: 'Na fila' }))]; activeIndex = -1; revision = 0; batchStamp = ''; paintDirty = false;
     await selectEntry(0); await processAll(); $('file').value = '';
   }
   function download(blob, name) {
@@ -413,12 +441,21 @@
     render(); status(report.confident ? 'Divisões detectadas. Confira o resultado automático.' : report.warnings.join(' '));
   });
   $('file').addEventListener('change', event => enqueueFiles(event.target.files));
+  document.addEventListener('paste', event => {
+    // Text paste remains native; only real clipboard image files are imported.
+    const files = [...(event.clipboardData?.items || [])].filter(item => item.kind === 'file' && /^image\/(png|jpeg|webp)$/.test(item.type)).map(item => item.getAsFile()).filter(Boolean);
+    if (!files.length) return;
+    event.preventDefault();
+    const named = files.map(file => new File([file], `colagem-${String(++clipboardSequence).padStart(3, '0')}.${file.type === 'image/jpeg' ? 'jpg' : file.type.split('/')[1]}`, { type: file.type }));
+    enqueueFiles(named, true);
+  });
   for (const type of ['dragenter', 'dragover']) $('stage').addEventListener(type, event => { event.preventDefault(); $('stage').classList.add('dragover'); });
   $('stage').addEventListener('dragleave', () => $('stage').classList.remove('dragover'));
   $('stage').addEventListener('drop', event => { event.preventDefault(); $('stage').classList.remove('dragover'); enqueueFiles(event.dataTransfer.files); });
   document.querySelectorAll('[data-tool]').forEach(b => b.addEventListener('click', () => selectTool(b.dataset.tool)));
   $('editTab').addEventListener('click', () => setPreview(false)); $('previewTab').addEventListener('click', () => setPreview(true));
   for (const id of ['gap', 'width', 'height', 'count', 'fitHeight', 'emptyBalloons']) $(id).addEventListener('change', () => {
+    if (story.active) { story.invalidate(); story.update(); status('Ajustes atualizados. Clique em Montar história para conferir o resultado.'); return; }
     if (id === 'count') {
       $('count').value = number('count', 0, 12);
       queue.forEach(entry => { entry.report = null; entry.lines = null; entry.panels = null; entry.blob = null; entry.approved = false; });

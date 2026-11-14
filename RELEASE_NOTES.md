@@ -1,4 +1,23 @@
-# FrameCut v1.0.1
+# FrameCut v1.1.1
+
+Corrige a limpeza do modo história que confundia desenhos dentro de máscaras brancas com letras. Regiões com elementos coloridos internos são preservadas por inteiro, incluindo os traços escuros do rosto.
+
+Validação: a imagem da máscara foi preservada pixel por pixel em PNG e JPEG, na prévia e na exportação. O teste de desenho colorido sobre fundo branco faz parte da verificação padrão. Os balões dos cinco exemplos anteriores e o recorte de páginas continuam funcionando nos testes.
+
+## Histórico: v1.1.0
+
+Dois modos de importação: **Recortar páginas** mantém o processamento de páginas com vários quadros. **Montar uma história** recebe uma imagem por quadro e gera um único PNG vertical, sem procurar cortes dentro dos arquivos.
+
+- **Ctrl + V nos dois modos**: cada colagem acrescenta imagens. Colagens seguidas ou feitas durante o processamento aguardam sua vez.
+- A história tem miniaturas numeradas, reordenação por arrastar ou setas e remoção de quadros.
+- Largura, espaçamento e limpeza ajustáveis; a altura da história cresce automaticamente por padrão.
+- Cada modo mantém sua fila e suas medidas durante a sessão.
+- A limpeza da história reconhece tinta dentro de balões brancos fechados, incluindo falas curtas e letras grandes, preservando desenhos e créditos. Balões transparentes ou coloridos ficam preservados nesse modo.
+- HTML e ZIP portáteis continuam locais e offline; tutorial atualizado.
+
+Validação em Chrome headless: recorte existente, colagem, fila durante processamento, reordenação, medidas, alternância dos modos, limpeza e PNG exportado. As cinco imagens fornecidas foram montadas e as áreas verificadas dos rostos e desenhos foram comparadas pixel por pixel.
+
+## Histórico: v1.0.1
 
 Corrige a atualização da prévia depois de reprocessar o lote.
 

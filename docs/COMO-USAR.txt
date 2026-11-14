@@ -10,6 +10,26 @@ DOWNLOAD E ABERTURA
 Você não precisa instalar nada. Depois do download, funciona offline.
 
 PRIMEIRO USO
+Escolha o modo: Recortar páginas (vários quadros em cada imagem) ou
+Montar uma história (cada imagem já é um quadro).
+
+CTRL + V NOS DOIS MODOS
+Na origem, use Copiar imagem, volte ao aplicativo e pressione Ctrl + V.
+Cada colagem acrescenta imagens à fila. Copiar apenas o link não importa.
+
+MONTAR UMA HISTÓRIA
+1. Escolha Montar uma história e cole ou adicione seus quadros.
+2. Arraste as miniaturas ou use as setas para ordenar. O X remove um quadro.
+3. Ajuste largura e intervalo. Padrão: 608 px de largura e 100 px de espaço.
+4. A altura cresce automaticamente. Cada quadro mantém sua proporção.
+5. A limpeza vem ligada e trabalha com balões brancos fechados.
+   Textos em fundos transparentes ou coloridos ficam preservados.
+6. Clique em Montar história depois de alterar os ajustes.
+7. Confira e use Baixar história em PNG para gerar uma única imagem.
+Use Começar outra história para limpar a lista. Alternar os modos mantém
+as imagens e as medidas durante a sessão. Fechar a aba descarta o trabalho.
+
+RECORTAR PÁGINAS
 1. Deixe Quadros por imagem em Automático.
 2. O tamanho padrão é 608 x 1600 pixels; ajuste se precisar.
 3. Para manter os textos, desmarque Esvaziar balões automaticamente.

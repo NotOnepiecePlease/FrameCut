@@ -10,6 +10,9 @@ if (!browser) throw new Error('Chrome/Edge not found. Set BROWSER_PATH.');
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'entrequadros-qa-'));
 const imageArg = process.argv.indexOf('--image');
 const fixture = imageArg >= 0 ? fs.readFileSync(process.argv[imageArg + 1]).toString('base64') : null;
+const storyFixtures = process.argv.flatMap((arg, index) => arg === '--story-image' ? [fs.readFileSync(process.argv[index + 1]).toString('base64')] : []);
+const artworkArg = process.argv.indexOf('--artwork-image');
+const artworkFixture = artworkArg >= 0 ? fs.readFileSync(process.argv[artworkArg + 1]).toString('base64') : null;
 const gridArg=process.argv.indexOf('--grid-image');
 const gridFixture=gridArg>=0?fs.readFileSync(process.argv[gridArg+1]).toString('base64'):null;
 const framesArg=process.argv.indexOf('--frames-image');
@@ -45,6 +48,12 @@ const before=bc.getImageData(180,160,240,30).data,after=cleanedBubble.canvas.get
 check('Synthetic text erased',Array.from(before).filter((v,i)=>i%4!==3&&v<100).length>100&&Array.from(after).filter((v,i)=>i%4!==3&&v<100).length===0);
 check('Outside drawing preserved exactly',Array.from(bc.getImageData(20,20,1,1).data).join()===Array.from(cleanedBubble.canvas.getContext('2d').getImageData(20,20,1,1).data).join());
 check('Black balloon border preserved',Array.from(bc.getImageData(300,75,1,1).data).join()===Array.from(cleanedBubble.canvas.getContext('2d').getImageData(300,75,1,1).data).join());
+const decorated=document.createElement('canvas');decorated.width=600;decorated.height=600;
+const dc=decorated.getContext('2d');dc.fillStyle='#43829f';dc.fillRect(0,0,600,600);dc.fillStyle='#fff';dc.beginPath();dc.ellipse(300,180,220,105,0,0,Math.PI*2);dc.fill();
+dc.fillStyle='#111';dc.fillRect(210,150,25,35);dc.fillRect(365,150,25,35);
+dc.fillStyle='#c52ed3';dc.beginPath();dc.arc(300,200,15,0,Math.PI*2);dc.fill();
+const decoratedClean=window.BalloonCleaner.clean(decorated,{closedBalloonsOnly:true});
+check('Colored artwork in a white shape prevents erasing black facial details',decoratedClean.balloons===0&&decorated.toDataURL()===decoratedClean.canvas.toDataURL());
 bc.fillStyle='#e0edfa';bc.fillRect(180,155,240,40);bc.fillStyle='#000';bc.fillText('OK',300,185);
 check('Short ambiguous text skipped automatically',window.BalloonCleaner.clean(bubble).balloons===0);
 check('Short text can be cleaned with one click',window.BalloonCleaner.clean(bubble,{point:{x:300,y:210}}).balloons===1);
@@ -226,10 +235,111 @@ if(${JSON.stringify(framesFixture)} !== null) {
  const wrong=engine.detect(raw,3);check('Incorrect forced count requires review',!wrong.confident&&wrong.panels.length===4);
  if(${JSON.stringify(gridFixture)}!==null){const other=Uint8Array.from(atob(${JSON.stringify(gridFixture)}),ch=>ch.charCodeAt(0));await importFiles([new File([other],'lote-misto.png',{type:'image/png'}),new File([bytes],'lote-quatro.png',{type:'image/png'})]);check('Different layouts and counts work in the same batch',[...$('queue').querySelectorAll('small')].every(s=>s.textContent.startsWith('Pronta')));$('queue').children[1].click();await until(()=>$('queue').children[1].classList.contains('current'));check('Stored four-panel geometry restored on selection',$('panelCount').textContent.startsWith('4 quadros'));$('queue').children[0].click();await until(()=>$('queue').children[0].classList.contains('current'));check('Stored mixed geometry restored on selection',$('panelCount').textContent.startsWith('3 quadros'));}
 }
+// Clipboard and independent-panel assembly use the actual UI event handlers.
+async function pasteImages(files) {
+ const data=new DataTransfer();files.forEach(file=>data.items.add(file));
+ const event=new ClipboardEvent('paste',{clipboardData:data,bubbles:true,cancelable:true});
+ document.dispatchEvent(event);return event.defaultPrevented;
+}
+const priorPageCount=$('queue').children.length;
+check('Clipboard image paste is handled',await pasteImages([new File([blob],'clipboard.png',{type:'image/png'})]));
+await until(()=>!$('processAll').disabled&&$('queue').children.length===priorPageCount+1);
+check('Page clipboard paste appends rather than replacing the batch',$('queue').children.length===priorPageCount+1);
+const textData=new DataTransfer();textData.setData('text/plain','608');
+const textPaste=new ClipboardEvent('paste',{clipboardData:textData,bubbles:true,cancelable:true});$('width').dispatchEvent(textPaste);
+check('Ordinary text paste remains native',!textPaste.defaultPrevented);
+click('#storyMode');await until(()=>$('storyMode').getAttribute('aria-pressed')==='true');
+check('Story mode hides page detection and ZIP controls',$('count').closest('label').hidden&&$('downloadZip').hidden&&document.querySelector('.advanced').hidden);
+check('Story defaults to fixed spacing to fit any panel count',!$('fitHeight').checked);
+$('width').value=300;$('gap').value=20;$('emptyBalloons').checked=false;
+$('gap').dispatchEvent(new Event('change'));
+async function solidFile(color,name,width=600,height=600){const raw=document.createElement('canvas');raw.width=width;raw.height=height;const rc=raw.getContext('2d');rc.fillStyle=color;rc.fillRect(0,0,width,height);return new File([await new Promise(resolve=>raw.toBlob(resolve))],name,{type:'image/png'});}
+const red=await solidFile('#ff0000','red.png'),green=await solidFile('#00ff00','green.png'),blue=await solidFile('#0000ff','blue.png');
+const storyData=new DataTransfer();[red,green,blue].forEach(file=>storyData.items.add(file));$('file').files=storyData.files;$('file').dispatchEvent(new Event('change'));
+await until(()=>!$('processAll').disabled&&$('queue').children.length===3);
+check('Story preserves full independent panels without separator detection',canvas.width===300&&canvas.height===940);
+check('Story follows import order',pixel(20,20)[0]===255&&pixel(20,340)[1]===255&&pixel(20,660)[2]===255);
+check('Story adds white gaps between panels',pixel(20,310).slice(0,3).every(v=>v===255));
+check('Story queue includes thumbnails and numbered names',$('queue').querySelectorAll('img').length===3&&$('queue').children[0].textContent.includes('1. red.png'));
+// Queue two paste events without waiting for the first build to finish.
+await pasteImages([red]);await pasteImages([blue]);
+await until(()=>!$('processAll').disabled&&$('queue').children.length===5);
+check('Rapid Ctrl+V pastes append every frame in order',canvas.height===1580&&pixel(20,980)[0]===255&&pixel(20,1300)[2]===255);
+$('queue').children[4].querySelector('button').click();await until(()=>!$('processAll').disabled);
+check('Arrow buttons reorder the generated story',pixel(20,980)[2]===255&&pixel(20,1300)[0]===255);
+const drag=new DataTransfer(),first=$('queue').children[0],last=$('queue').children[4];
+first.dispatchEvent(new DragEvent('dragstart',{dataTransfer:drag,bubbles:true}));last.dispatchEvent(new DragEvent('drop',{dataTransfer:drag,bubbles:true,cancelable:true}));
+await until(()=>!$('processAll').disabled);
+check('Dragging reorders panels',pixel(20,20)[1]===255&&pixel(20,1300)[0]===255);
+$('queue').children[4].querySelectorAll('button')[2].click();await until(()=>!$('processAll').disabled);
+check('Removing a panel rebuilds the story',$('queue').children.length===4&&canvas.height===1260);
+const storyDownloadStart=downloads.length;click('#export');await until(()=>downloads.length>storyDownloadStart);
+check('Story exports one complete PNG',downloads.at(-1).name==='historia-preparada.png'&&await pngPixels(downloads.at(-1).blob)===canvas.toDataURL());
+click('#pagesMode');await until(()=>$('pagesMode').getAttribute('aria-pressed')==='true');
+check('Switching back preserves the page batch',$('queue').children.length===priorPageCount+1&&!$('downloadZip').hidden&&!$('count').closest('label').hidden);
+click('#storyMode');await until(()=>!$('processAll').disabled);
+check('Switching modes preserves story panels and settings',$('queue').children.length===4&&$('width').value==='300'&&$('gap').value==='20');
+$('fitHeight').checked=true;$('height').value=300;$('fitHeight').dispatchEvent(new Event('change'));click('#processAll');await until(()=>!$('processAll').disabled);
+check('Insufficient story height is reported without stale preview',$('status').textContent.includes('altura final é pequena')&&canvas.hidden);
+$('fitHeight').checked=false;$('fitHeight').dispatchEvent(new Event('change'));click('#processAll');await until(()=>!$('processAll').disabled);
+check('Story recovers after invalid dimensions',!canvas.hidden&&canvas.height===1260);
+click('#clearStory');check('New story clears panels and disables export',$('queue').children.length===0&&$('export').disabled&&canvas.hidden);
+bc.fillStyle='#fff';bc.beginPath();bc.ellipse(300,180,220,105,0,0,Math.PI*2);bc.fill();bc.stroke();bc.fillStyle='#000';bc.fillText('HELLO WORLD',300,185);
+const speech=new File([await new Promise(resolve=>bubble.toBlob(resolve))],'speech.png',{type:'image/png'});
+$('width').value=600;$('emptyBalloons').checked=true;$('emptyBalloons').dispatchEvent(new Event('change'));
+await pasteImages([speech]);await until(()=>!$('processAll').disabled&&$('queue').children.length===1);
+check('A single story panel exports without needing separators',canvas.width===600&&canvas.height===600);
+check('Story reuses automatic balloon cleanup',Array.from(context.getImageData(180,160,240,30).data).filter((v,i)=>i%4!==3&&v<100).length===0&&$('cleanupInfo').textContent.includes('1 balões'));
+$('emptyBalloons').checked=false;$('emptyBalloons').dispatchEvent(new Event('change'));click('#processAll');await until(()=>!$('processAll').disabled);
+check('Turning story cleanup off restores the original text',Array.from(context.getImageData(180,160,240,30).data).filter((v,i)=>i%4!==3&&v<100).length>100);
+const wide=await solidFile('#00ff00','wide.png',600,300);await pasteImages([wide]);await until(()=>!$('processAll').disabled&&$('queue').children.length===2);
+check('Mixed aspect ratios are preserved',canvas.width===600&&canvas.height===920);
+// Clipboard imports also wait for a rebuild started with the button.
+click('#processAll');await pasteImages([red]);await until(()=>!$('processAll').disabled&&$('queue').children.length===3);
+check('Pasting during a manual story build does not drop the new panel',$('queue').children.length===3);
+const storyExamples=${JSON.stringify(storyFixtures)};
+const artworkExample=${JSON.stringify(artworkFixture)};
+if(artworkExample){
+ const file=new File([Uint8Array.from(atob(artworkExample),c=>c.charCodeAt(0))],'mascara-sem-falas.png',{type:'image/png'});
+ const image=await createImageBitmap(file),raw=document.createElement('canvas');raw.width=image.width;raw.height=image.height;raw.getContext('2d').drawImage(image,0,0);
+ const rawPixels=raw.getContext('2d').getImageData(0,0,raw.width,raw.height).data;
+ for(const quality of [null,.85]){
+  const input=quality===null?raw:document.createElement('canvas');
+  if(quality!==null){input.width=raw.width;input.height=raw.height;input.getContext('2d').drawImage(await createImageBitmap(await new Promise(resolve=>raw.toBlob(resolve,'image/jpeg',quality))),0,0);}
+  const before=input.getContext('2d').getImageData(0,0,input.width,input.height).data,clean=window.BalloonCleaner.clean(input,{closedBalloonsOnly:true});
+  const after=clean.canvas.getContext('2d').getImageData(0,0,input.width,input.height).data;
+  check('Decorated mask artwork is preserved pixel for pixel'+(quality===null?' (PNG)':' (JPEG)'),before.every((v,i)=>v===after[i]),{balloons:clean.balloons});
+ }
+ click('#clearStory');$('width').value=raw.width;$('emptyBalloons').checked=true;$('emptyBalloons').dispatchEvent(new Event('change'));
+ await pasteImages([file]);await until(()=>!$('processAll').disabled&&$('queue').children.length===1);
+ check('Story preview preserves the complete mask dimensions',canvas.width===raw.width&&canvas.height===raw.height);
+ const previewPixels=context.getImageData(0,0,canvas.width,canvas.height).data;
+ check('Story artwork pixels match the source exactly',rawPixels.every((v,i)=>v===previewPixels[i]));
+ const start=downloads.length;click('#export');await until(()=>downloads.length>start);
+ check('Exported story PNG preserves the mask',await pngPixels(downloads.at(-1).blob)===raw.toDataURL());
+ artifacts.maskPreview=canvas.toDataURL().split(',')[1];
+}
+if(storyExamples.length){
+ const artworkBoxes=[[100,230,170,250],[100,190,170,280],[100,170,170,300],[70,170,160,340],[90,190,145,350]];
+ for(let index=0;index<storyExamples.length;index++){
+  const image=await createImageBitmap(new Blob([Uint8Array.from(atob(storyExamples[index]),c=>c.charCodeAt(0))]));
+  const raw=document.createElement('canvas');raw.width=image.width;raw.height=image.height;raw.getContext('2d').drawImage(image,0,0);
+  const clean=window.BalloonCleaner.clean(raw,{closedBalloonsOnly:true});
+  if(artworkBoxes[index]&&image.width>550&&image.height>550){
+   const box=artworkBoxes[index],before=raw.getContext('2d').getImageData(...box).data,after=clean.canvas.getContext('2d').getImageData(...box).data;
+   check('Real story panel '+(index+1)+' preserves faces and artwork pixel for pixel',before.every((v,i)=>v===after[i]));
+  }
+ }
+ click('#clearStory');$('width').value=400;$('gap').value=100;$('emptyBalloons').checked=true;$('gap').dispatchEvent(new Event('change'));
+ await pasteImages(storyExamples.map((encoded,index)=>new File([Uint8Array.from(atob(encoded),c=>c.charCodeAt(0))],'quadro-'+(index+1)+'.png',{type:'image/png'})));
+ await until(()=>!$('processAll').disabled&&$('queue').children.length===storyExamples.length);
+ check('Provided real comic panels assemble into one story',canvas.width===400&&!canvas.hidden&&$('status').textContent.includes('História pronta'));
+ artifacts.storyPreview=canvas.toDataURL().split(',')[1];
+}
 } catch(error){results.push({error:error.message,stack:error.stack});}
 document.body.innerHTML='<pre id="qa-results">'+JSON.stringify({results,artifacts})+'</pre>';
 });`;
-for(const file of ['style.css','app.js','automation.js','balloon-cleaner.js'])fs.copyFileSync(path.join(root,file),path.join(dir,file));
+for(const file of ['style.css','app.js','automation.js','balloon-cleaner.js','story.js'])fs.copyFileSync(path.join(root,file),path.join(dir,file));
 fs.writeFileSync(path.join(dir,'test.js'),assertions);
 const entry=process.argv.includes('--portable')?'Entrequadros.html':'index.html';
 fs.writeFileSync(path.join(dir,'index.html'),fs.readFileSync(path.join(root,entry),'utf8').replace('</head>','<script src="test.js" defer></script></head>'));
@@ -259,6 +369,8 @@ fs.writeFileSync(path.join(dir,'index.html'),fs.readFileSync(path.join(root,entr
   }
   if(!result)throw new Error('Browser assertions timed out');
   const {results,artifacts}=result;
+  if(artifacts.storyPreview){fs.writeFileSync(path.join(root,'exemplo-historia.png'),Buffer.from(artifacts.storyPreview,'base64'));console.log('Story output: exemplo-historia.png');}
+  if(artifacts.maskPreview)fs.writeFileSync(path.join(root,'exemplo-mascara-preservada.png'),Buffer.from(artifacts.maskPreview,'base64'));
   for(const r of results)console.log(r.name?(r.ok?'PASS ':'FAIL ')+r.name+(r.detail?' '+JSON.stringify(r.detail):''):JSON.stringify(r));
   for(const [key,name] of [['mixedCleanRaw','exemplo-transparente-limpo-original.png'],['mixedClean','exemplo-transparente-limpo.png'],['framesCleanRaw','exemplo-brancos-limpo-original.png'],['framesClean','exemplo-brancos-limpo.png']])if(artifacts[key])fs.writeFileSync(path.join(root,name),Buffer.from(artifacts[key],'base64'));
   if(artifacts.mixed){fs.writeFileSync(path.join(root,'exemplo-layout-misto.png'),Buffer.from(artifacts.mixed,'base64'));console.log('Mixed output: exemplo-layout-misto.png '+JSON.stringify(artifacts.mixedReport));}

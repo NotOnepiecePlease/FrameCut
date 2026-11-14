@@ -4,6 +4,22 @@ Ferramenta local para recortar várias tirinhas e esvaziar seus balões automati
 
 ## Abrir e usar
 
+Há dois modos: **Recortar páginas** identifica os quadros dentro de cada página e gera um PNG por página; **Montar uma história** recebe uma imagem por quadro e gera um único PNG vertical.
+
+Em ambos, copie uma imagem no navegador e use **Ctrl + V** no aplicativo. Use **Copiar imagem** na origem, e não copiar o link. Cada colagem acrescenta imagens à fila, inclusive se outra imagem ainda estiver sendo processada. A colagem de texto nos campos continua funcionando normalmente.
+
+### Montar uma história com imagens separadas
+
+1. Escolha **Montar uma história** e cole os quadros com **Ctrl + V**, escolha vários arquivos ou arraste-os para a prévia. Novas importações acrescentam quadros à história atual.
+2. Confira as miniaturas numeradas. Arraste para reorganizar ou use as setas **↑ / ↓**. O **×** remove um quadro.
+3. Ajuste a largura e o espaço entre quadros. O padrão é **608 px de largura e 100 px de intervalo**; a altura cresce conforme o conteúdo. Cada imagem fica inteira e mantém sua proporção.
+4. A limpeza automática vem ligada. No modo história, limpa balões brancos fechados, incluindo falas curtas e letras grandes. Textos em fundos transparentes ou coloridos ficam preservados; confira os avisos e a prévia.
+5. Depois de alterar medidas ou a limpeza, clique em **Montar história** para atualizar a prévia. **Baixar história em PNG** gera uma única imagem com todos os quadros na ordem da lista.
+
+Para uma altura específica, marque **Ajustar espaços para uma altura final**. A altura precisa comportar todos os quadros. Para uma história nova, use **Começar outra história**. Alternar entre os modos mantém as imagens e os ajustes de cada um durante a sessão. Não há salvamento após fechar a aba.
+
+### Recortar páginas
+
 1. Dê dois cliques em **`Entrequadros.html`**, usando Chrome ou Edge. Pode compartilhar somente esse arquivo.
 2. Clique em **Escolher imagens** e selecione uma ou várias imagens PNG, JPG ou WebP. Também pode arrastar os arquivos para a área de prévia.
 3. O processamento começa automaticamente. A **quantidade de quadros é automática**, com saída padrão de **608 × 1600 pixels**, ajustável nos campos de largura e altura. A ferramenta reconhece faixas empilhadas, quadros lado a lado separados por faixas pretas e quadros com molduras pretas sobre margens brancas. A opção **Esvaziar balões automaticamente** vem ligada. Margens e créditos são preservados.
