@@ -2,9 +2,18 @@
 
 **Cortador de quadros desgraçento — edição Kaline zé preguiça.**
 
-Transforme páginas de quadrinhos em imagens verticais com espaço entre os quadros. Selecione uma imagem ou um lote inteiro: o FrameCut identifica os quadros, organiza a ordem de leitura e prepara os PNGs para baixar. Também permite esvaziar os balões.
+Recorte páginas de quadrinhos ou monte uma história com imagens separadas. O FrameCut organiza os quadros em uma imagem vertical, adiciona espaços e permite esvaziar os balões. Importe arquivos ou **cole imagens com Ctrl + V**, sem precisar baixá-las antes.
 
 **Gratuito, local e sem instalação.** Depois de baixar, funciona sem internet. As imagens são processadas no navegador e não são enviadas para um servidor.
+
+## Novidades da v1.1.1
+
+- **Dois modos:** recortar páginas com vários quadros ou juntar imagens que já são quadros individuais.
+- **Ctrl + V nos dois modos:** cada colagem acrescenta imagens, inclusive durante o processamento.
+- **Histórias com ordem ajustável:** miniaturas numeradas, arrastar para reorganizar, setas e remoção de quadros.
+- **Correção na limpeza do modo história:** elementos coloridos dentro de uma região branca fazem essa região ser preservada, evitando o apagamento de desenhos como os de uma máscara decorada. A imagem que revelou o problema foi testada em PNG e JPEG, na prévia e na exportação.
+
+Veja a [release v1.1.1 e suas notas](https://github.com/NotOnepiecePlease/FrameCut/releases/tag/v1.1.1).
 
 ## Baixar e começar
 
@@ -37,10 +46,16 @@ Pronto: não precisa instalar Python, Node.js, Photoshop ou iniciar localhost. O
 
 ### Escolher como importar
 
-- **Recortar páginas**: cada arquivo contém uma página com vários quadros. O aplicativo detecta os cortes e gera um PNG por página, com opção de ZIP para o lote.
-- **Montar uma história**: cada arquivo já é um quadro. O aplicativo preserva as imagens inteiras e monta um único PNG vertical na ordem da lista.
+| Modo | O que enviar | Resultado |
+| --- | --- | --- |
+| **Recortar páginas** | Uma ou várias páginas, com vários quadros em cada imagem | Detecta e recorta os quadros; gera um PNG por página, com opção de ZIP para o lote. |
+| **Montar uma história** | Uma imagem por quadro | Mantém cada imagem inteira e monta um único PNG vertical, na ordem escolhida. |
+
+Por exemplo: cinco imagens que contam a mesma história entram em **Montar uma história**. O resultado é um PNG com os cinco quadros, separados por espaços.
 
 **Ctrl + V funciona nos dois modos.** Na origem, escolha **Copiar imagem**, volte ao aplicativo e cole. Copiar apenas o endereço da imagem não importa o arquivo. Cada nova colagem acrescenta imagens à fila, sem substituir as anteriores; colagens seguidas aguardam o processamento.
+
+Também pode usar **Escolher imagens** ou arrastar arquivos para a prévia. No modo história, essas ações acrescentam quadros. No modo páginas, escolher arquivos ou arrastá-los inicia um novo lote; a colagem com Ctrl + V acrescenta páginas ao lote atual.
 
 ### Montar uma história
 
@@ -53,9 +68,9 @@ Pronto: não precisa instalar Python, Node.js, Photoshop ou iniciar localhost. O
 
 Também pode ajustar os espaços para uma altura final, desde que ela comporte todos os quadros. **Começar outra história** limpa a lista. Alternar os modos mantém as imagens e os ajustes de cada um durante a sessão; fechar a aba descarta o trabalho.
 
-### Preparar uma imagem ou várias de uma vez
+### Recortar páginas: uma imagem ou um lote
 
-1. Deixe **Quadros por imagem** em **Automático**.
+1. Escolha **Recortar páginas** e deixe **Quadros por imagem** em **Automático**.
 2. Escolha a largura e a altura de saída. O padrão é **608 × 1600 pixels**.
 3. Se quiser somente recortar e espaçar, **desmarque Esvaziar balões automaticamente**. Ela vem marcada por padrão.
 4. Clique em **Escolher imagens**. Para selecionar várias no Windows, use **Ctrl + clique** ou **Ctrl + A** dentro da pasta.
@@ -67,7 +82,7 @@ O navegador salva os arquivos na pasta de downloads configurada. Extraia o ZIP d
 
 **Confira os resultados antes de publicar.** A detecção é automática, mas algumas páginas podem precisar de correção.
 
-### Tamanho e espaços
+### Tamanho e espaços no modo páginas
 
 | Ajuste | O que faz |
 | --- | --- |
@@ -89,13 +104,16 @@ Para reproduzir as dimensões dos exemplos desta documentação, use 608 × 1600
 
 Com **Esvaziar balões automaticamente** marcado, a limpeza é aplicada tanto à prévia quanto aos arquivos exportados.
 
-- Em balões brancos ou coloridos opacos, procura a fala completa, incluindo pontuação e letras menores.
-- Em balões transparentes, identifica os traços das letras e preenche essas áreas com cores próximas, evitando cobrir o fundo inteiro com um retângulo.
-- O original continua disponível em **Conferir cortes**. Desmarque a opção para comparar com o resultado sem limpeza.
+| Modo | Como funciona a limpeza |
+| --- | --- |
+| **Recortar páginas** | Procura falas em balões brancos ou coloridos opacos. Em balões transparentes, tenta substituir os traços das letras com cores próximas. O original fica disponível em **Conferir cortes**, com ferramentas para retoques. |
+| **Montar uma história** | Limpa balões brancos fechados, incluindo falas curtas e letras grandes. Preserva fundos transparentes ou coloridos e regiões brancas com desenhos coloridos internos. |
+
+Para comparar com o texto original, desmarque **Esvaziar balões automaticamente**. No modo história, clique em **Montar história** para atualizar a prévia.
 
 **O preenchimento é aproximado:** detalhes e texturas escondidos pelas letras podem ficar suavizados. Letras coloridas, textos muito curtos ou formatos diferentes podem não ser identificados. A contagem de balões limpos não garante que todo texto tenha sido encontrado.
 
-### Corrigir um corte
+### Corrigir um corte no modo páginas
 
 1. Selecione a imagem na fila e clique em **Conferir cortes**.
 2. Abra **Ajustes manuais e limpeza dos balões**.
@@ -116,7 +134,7 @@ Nos recortes retangulares:
 
 Use **Desfazer** ou **Ctrl + Z** se precisar voltar. Confira o resultado e reprocese o lote antes de baixar.
 
-### Corrigir a limpeza de um balão
+### Corrigir a limpeza de um balão no modo páginas
 
 Nos ajustes manuais, selecione **Limpar um balão com um clique** e clique no fundo claro, próximo das letras. Se não reconhecer a região, use **Retângulo**, **Elipse** ou **Pincel** para retoques. O **Conta-gotas** copia a cor de uma parte limpa do balão.
 
@@ -151,6 +169,7 @@ Imagens fornecidas para demonstração, com as assinaturas e créditos presentes
 | **Revisar** na fila | Confira os cortes nos ajustes manuais ou informe a quantidade de quadros. Essa imagem não entra no ZIP até ser corrigida e reprocessada. |
 | **Revisar texto** | Uma fala foi preservada porque a máscara não cobriu os traços identificados por inteiro. Confira e retoque a limpeza. |
 | **0 balões** | Nenhum foi identificado; confira se ainda há texto. Não significa que a página já esteja limpa. |
+| Texto mantido no modo história | A limpeza trabalha com balões brancos fechados e preserva regiões com desenhos coloridos internos. Desmarque a limpeza para comparar com o original. |
 | Altura final pequena | Aumente a altura ou diminua a largura de saída. |
 | O navegador não baixou nada | Confira a pasta Downloads, o ícone de downloads e a mensagem na parte inferior do aplicativo. |
 | Arquivo aparece como código | Abra `FrameCut.html` com Chrome ou Edge. |
@@ -161,9 +180,9 @@ O ZIP pode incluir **`REVISAR.txt`**, com imagens que ficaram de fora, e **`CONF
 
 - Entrada: PNG, JPG/JPEG ou WebP; até 24 megapixels e 16.000 pixels por lado.
 - Saída: PNG; até 60 megapixels e 32.000 pixels de altura.
-- Até 250 imagens por lote e 300 MB de PNGs gerados. Para trabalhos maiores, divida em lotes.
-- A detecção automática reconhece até 12 quadros. Quadros sem bordas, diagonais ou sobrepostos podem precisar de recorte manual.
-- O botão **Parar após esta imagem** interrompe o lote entre arquivos.
+- Até 250 imagens por lote no modo páginas ou 250 quadros por história. O lote de páginas tem limite de 300 MB de PNGs gerados. Para trabalhos maiores, divida o conteúdo.
+- No modo páginas, a detecção automática reconhece até 12 quadros por imagem. Quadros sem bordas, diagonais ou sobrepostos podem precisar de recorte manual.
+- No modo páginas, **Parar após esta imagem** interrompe o lote entre arquivos. No modo história, cada imagem já é um quadro e não passa pela detecção de cortes.
 - **Baixe os resultados antes de fechar a aba ou substituir o lote.** Não há salvamento permanente de projeto.
 - O desfazer usa até aproximadamente 100 MB e reinicia ao trocar de imagem. As edições são mantidas na fila durante a sessão.
 - As imagens ficam no computador. O aplicativo não usa contas, serviços de tradução ou processamento remoto.
@@ -187,7 +206,15 @@ node verify.cjs --portable
 python scripts/package_release.py
 ```
 
-Os arquivos prontos ficam em `release/`. A versão vem do arquivo `VERSION`. Os fontes são `index.html`, `style.css`, `app.js`, `automation.js` e `balloon-cleaner.js`.
+Os arquivos prontos ficam em `release/`. A versão vem do arquivo `VERSION`. Os fontes são `index.html`, `style.css`, `app.js`, `story.js`, `automation.js` e `balloon-cleaner.js`.
+
+Para verificar a preservação de uma imagem sem falas no modo história, além dos testes padrão:
+
+```powershell
+node verify.cjs --portable --artwork-image "C:/caminho/mascara-sem-falas.png"
+```
+
+Esse teste compara os pixels antes e depois da limpeza em PNG e JPEG, além da prévia e do PNG exportado. Use uma imagem sem texto a remover: o resultado esperado é preservar todos os pixels.
 
 Para publicar depois de autenticar o GitHub CLI:
 
